@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var db *pgxpool.Pool
@@ -32,8 +33,6 @@ func newComment(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(comment)
-
 	c.Redirect(http.StatusFound, "/")
 }
 
@@ -44,16 +43,21 @@ func index(c *gin.Context) {
 		badRequest(c)
 		return
 	}
-	var comments []string
+	type Comment struct {
+		First string
+		Rest  []string
+	}
+	var comments []Comment
 	for rows.Next() {
 		var text string
 		if err := rows.Scan(&text); err != nil {
 			log.Fatal(err)
 		}
-		comments = append(comments, text)
-	}
 
-	fmt.Println(comments)
+		paragraphs := strings.Split(text, "\n")
+
+		comments = append(comments, Comment{paragraphs[0], paragraphs[1:]})
+	}
 
 	c.HTML(http.StatusOK, "index.tmpl", gin.H{
 		"comments": comments,
@@ -73,5 +77,6 @@ func main() {
 	r.LoadHTMLGlob("templates/*")
 	r.GET("/", index)
 	r.POST("/", newComment)
-	r.Run(":8080")
+	r.Static("/static", "./static")
+	r.Run()
 }

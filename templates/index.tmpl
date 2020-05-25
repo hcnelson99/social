@@ -1,18 +1,36 @@
+<!DOCTYPE html>
 <html>
         <head>
         <title>Home page</title>
+        <link rel="stylesheet" href="static/style.css">
         </head>
 
-        <h1> Home page </h1>
+        <body>
 
-        <ul>
-            {{ range .comments }}
-            <li> {{ . }} </li>
-            {{ end }}
-        </ul>
+        <h1>Posts</h1>
+
+        <div>
+                {{ range $i, $p := .comments }}
+                <div class="post"> 
+                        <p class=>
+                        {{ $p.First }}
+                        </p>
+                        <input type="checkbox" id="toggle-{{ $i }}">
+                        {{ range $p.Rest }} 
+                                <p class="hidden-paragraph">
+                                        {{ . }}
+                                </p>
+                        {{ end }}
+                        <label for="toggle-{{ $i }}" class="more">Show more</label>
+                        <label for="toggle-{{ $i }}" class="less">Show less</label>
+                </div>
+                {{ end }}
+        </div>
 
         <form method="post">
         <textarea name="comment">default text</textarea>
         <button type="submit">Add comment</button>
         </form>
+
+        </body>
 </html>

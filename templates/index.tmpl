@@ -12,17 +12,22 @@
         <div>
                 {{ range $i, $p := .comments }}
                 <div class="post"> 
+                        <p> {{ $p.Author }} {{ $p.Date }} </p>
                         <p class=>
                         {{ $p.First }}
                         </p>
-                        <input type="checkbox" id="toggle-{{ $i }}">
-                        {{ range $p.Rest }} 
-                                <p class="hidden-paragraph">
-                                        {{ . }}
-                                </p>
+
+                        {{ if $p.Rest }}
+                                <input type="checkbox" id="toggle-{{ $i }}">
+                                {{ range $p.Rest }} 
+                                        <p class="hidden-paragraph">
+                                                {{ . }}
+                                        </p>
+                                {{ end }}
+                                <label for="toggle-{{ $i }}" class="more">Show more</label>
+                                <label for="toggle-{{ $i }}" class="less">Show less</label>
+
                         {{ end }}
-                        <label for="toggle-{{ $i }}" class="more">Show more</label>
-                        <label for="toggle-{{ $i }}" class="less">Show less</label>
                 </div>
                 {{ end }}
         </div>

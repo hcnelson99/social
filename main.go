@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 var db *pgxpool.Pool
@@ -27,7 +28,7 @@ func newComment(c *gin.Context) {
 		badRequest(c)
 	}
 
-	_, err := db.Query(context.Background(), "INSERT INTO comments(text) VALUES ($1)", comment)
+	_, err := db.Query(context.Background(), "INSERT INTO comments(author, text) VALUES ($1, $2)", "Steven Shan", comment)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -37,26 +38,31 @@ func newComment(c *gin.Context) {
 }
 
 func index(c *gin.Context) {
-	rows, err := db.Query(context.Background(), "SELECT text FROM comments")
+	rows, err := db.Query(context.Background(), "SELECT author, date, text FROM comments")
 	if err != nil {
 		log.Fatal(err)
 		badRequest(c)
 		return
 	}
 	type Comment struct {
-		First string
-		Rest  []string
+		Author string
+		Date   *time.Time
+		First  string
+		Rest   []string
 	}
 	var comments []Comment
 	for rows.Next() {
+		var comment Comment
 		var text string
-		if err := rows.Scan(&text); err != nil {
+		if err := rows.Scan(&comment.Author, &comment.Date, &text); err != nil {
 			log.Fatal(err)
 		}
 
 		paragraphs := strings.Split(text, "\n")
+		comment.First = paragraphs[0]
+		comment.Rest = paragraphs[1:]
 
-		comments = append(comments, Comment{paragraphs[0], paragraphs[1:]})
+		comments = append(comments, comment)
 	}
 
 	c.HTML(http.StatusOK, "index.tmpl", gin.H{
@@ -65,6 +71,8 @@ func index(c *gin.Context) {
 }
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	var err error
 	db, err = pgxpool.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {

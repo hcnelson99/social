@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -12,37 +13,48 @@ import (
 	"time"
 )
 
+var t *template.Template
 var db *pgxpool.Pool
 
-func badRequest(c *gin.Context) {
-	c.String(http.StatusBadRequest, "bad request")
+func badRequest(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusBadRequest)
+	fmt.Fprintf(w, "400 bad request")
 }
 
-func internalServerError(c *gin.Context) {
-	c.String(http.StatusInternalServerError, "internal server error")
+func notFound(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprintf(w, "404 page not found")
 }
 
-func newComment(c *gin.Context) {
-	comment, success := c.GetPostForm("comment")
+func getPostFormValue(r *http.Request, key string) (string, bool) {
+	r.ParseForm()
+	values, success := r.PostForm[key]
+	if !success || len(values) != 1 {
+		return "", false
+	}
+	return values[0], true
+}
+
+func putIndex(w http.ResponseWriter, r *http.Request) {
+	comment, success := getPostFormValue(r, "comment")
 	if !success {
-		badRequest(c)
+		badRequest(w)
+		return
 	}
 
 	_, err := db.Query(context.Background(), "INSERT INTO comments(author, text) VALUES ($1, $2)", "Steven Shan", comment)
 	if err != nil {
 		log.Fatal(err)
-		return
 	}
 
-	c.Redirect(http.StatusFound, "/")
+	w.Header().Add("Location", "/")
+	w.WriteHeader(http.StatusFound)
 }
 
-func index(c *gin.Context) {
+func getIndex(w http.ResponseWriter) {
 	rows, err := db.Query(context.Background(), "SELECT author, date, text FROM comments")
 	if err != nil {
 		log.Fatal(err)
-		badRequest(c)
-		return
 	}
 	type Comment struct {
 		Author string
@@ -65,26 +77,44 @@ func index(c *gin.Context) {
 		comments = append(comments, comment)
 	}
 
-	c.HTML(http.StatusOK, "index.tmpl", gin.H{
-		"comments": comments,
-	})
+	t.ExecuteTemplate(w, "index.tmpl",
+		map[string]interface{}{
+			"comments": comments,
+		},
+	)
+}
+
+func index(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		getIndex(w)
+		break
+	case "POST":
+		putIndex(w, r)
+		break
+	default:
+		notFound(w)
+		break
+	}
 }
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
+	t = template.Must(template.ParseGlob("./templates/*"))
+
 	var err error
 	db, err = pgxpool.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
+		log.Fatal("Unable to connect to database: %v\n", err)
 	}
 	defer db.Close()
 
-	r := gin.Default()
-	r.LoadHTMLGlob("templates/*")
-	r.GET("/", index)
-	r.POST("/", newComment)
-	r.Static("/static", "./static")
-	r.Run()
+	r := mux.NewRouter()
+	r.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	r.HandleFunc("/", index)
+
+	http.Handle("/", r)
+	log.Println("Starting server on port 8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

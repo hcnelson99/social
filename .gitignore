@@ -1,3 +1,6 @@
+# Build artifact
+main
+
 # Binaries for programs and plugins
 *.exe
 *.exe~

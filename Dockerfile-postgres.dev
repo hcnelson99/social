@@ -1,0 +1,6 @@
+# This is for development only.
+
+FROM postgres:11-alpine
+
+# Copy migrations so they are run when database starts
+COPY ./migrations/* /docker-entrypoint-initdb.d/

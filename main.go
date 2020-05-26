@@ -98,13 +98,33 @@ func index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getDb() (*pgxpool.Pool, error) {
+	username := os.Getenv("DATABASE_USERNAME")
+	password := os.Getenv("DATABASE_PASSWORD")
+	url := os.Getenv("DATABASE_URL")
+	name := os.Getenv("DATABASE_NAME")
+
+	log.Printf("Connecting to database: postgres://%s/%s\n", url, name)
+
+	connUrl := fmt.Sprintf(
+		"postgres://%s:%s@%s/%s",
+		username,
+		password,
+		url,
+		name,
+	)
+
+	return pgxpool.Connect(context.Background(), connUrl)
+}
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	t = template.Must(template.ParseGlob("./templates/*"))
 
 	var err error
-	db, err = pgxpool.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+
+	db, err = getDb()
 	if err != nil {
 		log.Fatal("Unable to connect to database: %v\n", err)
 	}

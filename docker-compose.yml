@@ -1,0 +1,34 @@
+# Configuration for local development
+
+version: '3.4'
+
+services:
+    app:
+        build:
+            context: .
+            target: development
+        image: app
+        ports:
+            - ${PORT}:${PORT}
+        environment:
+            - PORT=$PORT
+        depends_on:
+            - db
+        env_file:
+            - .env
+        volumes:
+            - .:/build
+
+    # for development only
+    db:
+        build:
+            context: .
+            dockerfile: Dockerfile-postgres.dev
+        image: postgres:11-alpine
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_USER: $DATABASE_USERNAME
+            POSTGRES_PASSWORD: $DATABASE_PASSWORD
+            POSTGRES_DB: $DATABASE_NAME
+

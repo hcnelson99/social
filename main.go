@@ -104,15 +104,24 @@ func getDb() (*pgxpool.Pool, error) {
 	url := os.Getenv("DATABASE_URL")
 	name := os.Getenv("DATABASE_NAME")
 
-	log.Printf("Connecting to database: postgres://%s/%s\n", url, name)
+	var connUrl string
+	if username == "" && password == "" {
+		connUrl = fmt.Sprintf(
+			"postgres://%s/%s",
+			url,
+			name,
+		)
+	} else {
+		connUrl = fmt.Sprintf(
+			"postgres://%s:%s@%s/%s",
+			username,
+			password,
+			url,
+			name,
+		)
+	}
 
-	connUrl := fmt.Sprintf(
-		"postgres://%s:%s@%s/%s",
-		username,
-		password,
-		url,
-		name,
-	)
+	log.Printf("Connecting to database: postgres://%s/%s\n", url, name)
 
 	return pgxpool.Connect(context.Background(), connUrl)
 }
@@ -126,7 +135,7 @@ func main() {
 
 	db, err = getDb()
 	if err != nil {
-		log.Fatal("Unable to connect to database: %v\n", err)
+		log.Fatalf("Unable to connect to database: %v\n", err)
 	}
 	defer db.Close()
 

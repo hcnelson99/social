@@ -2,6 +2,8 @@ BEGIN;
 
 DROP TABLE IF EXISTS version;
 DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS user_sesssions;
+DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE version(
     lock char(1) NOT NULL DEFAULT 'X',
@@ -16,6 +18,22 @@ CREATE TABLE comments (
     id SERIAL PRIMARY KEY, 
     author TEXT NOT NULL,
     date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    text TEXT NOT NULL);
+    text TEXT NOT NULL
+);
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    password_hash BYTEA NOT NULL,
+    password_salt BYTEA NOT NULL
+    -- disabling/banning users?
+);
+
+CREATE TABLE user_sessions (
+    session_key TEXT PRIMARY KEY,
+    user_id INTEGER REFERENCES users
+    -- login time?
+    -- last seen time?
+);
 
 COMMIT;

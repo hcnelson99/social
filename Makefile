@@ -1,6 +1,7 @@
 .PHONY: dev
+dev: SHELL:=/bin/bash
 dev:
-	docker-compose up --build
+	source .environ && docker-compose up --build
 
 .PHONY: clean
 clean:

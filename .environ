@@ -1,0 +1,6 @@
+export PORT=8080
+
+export DATABASE_URL=db
+export DATABASE_USERNAME=user
+export DATABASE_PASSWORD=password
+export DATABASE_NAME=social

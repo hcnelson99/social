@@ -39,13 +39,12 @@ func postComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := db.Query(context.Background(), "INSERT INTO comments(author, text) VALUES ($1, $2)", "Steven Shan", comment)
+	_, err := db.Exec(context.Background(), "INSERT INTO comments(author, text) VALUES ($1, $2)", "Steven Shan", comment)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	w.Header().Add("Location", "/")
-	w.WriteHeader(http.StatusFound)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func getComments(w http.ResponseWriter, r *http.Request) {
@@ -133,15 +132,11 @@ func register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Query(context.Background(), "INSERT INTO users(username, password_hash, password_salt) VALUES ($1, $2, $3)", username, hash, salt)
+	_, err = db.Exec(context.Background(), "INSERT INTO users(username, password_hash, password_salt) VALUES ($1, $2, $3)", username, hash, salt)
 	if err != nil {
-		// TODO: even though we have a uniqueness constraint on usernames, this
-		// Query doesnt seem to give an error when we try to insert a duplicate
-		// username. why is this?? We would like for it to do so so we do not
-		// have a TOCTOU with checking for uniqueness of username (since
-		// scrypting is probably more expensive than a db query)
 		log.Fatal(err)
 	}
+	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
 func getDb() (*pgxpool.Pool, error) {

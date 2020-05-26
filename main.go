@@ -4,8 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	// "crypto/subtle"
+	"encoding/base64"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/crypto/scrypt"
 	"html/template"
@@ -16,8 +19,11 @@ import (
 	"time"
 )
 
+const user_session_name = "login"
+
 var t *template.Template
 var db *pgxpool.Pool
+var store sessions.Store
 
 func httpError(w http.ResponseWriter, code int) {
 	http.Error(w, http.StatusText(code), code)
@@ -48,6 +54,7 @@ func postComment(w http.ResponseWriter, r *http.Request) {
 }
 
 func getComments(w http.ResponseWriter, r *http.Request) {
+
 	rows, err := db.Query(context.Background(), "SELECT author, date, text FROM comments")
 	if err != nil {
 		log.Fatal(err)
@@ -59,6 +66,7 @@ func getComments(w http.ResponseWriter, r *http.Request) {
 		Rest   []string
 	}
 	var comments []Comment
+
 	for rows.Next() {
 		var comment Comment
 		var text string
@@ -73,9 +81,30 @@ func getComments(w http.ResponseWriter, r *http.Request) {
 		comments = append(comments, comment)
 	}
 
+	session, err := store.Get(r, user_session_name)
+	if err != nil {
+		log.Fatal(err)
+	}
+	username := ""
+	if session_key, found := session.Values["session_key"]; found == true {
+		row := db.QueryRow(context.Background(), "SELECT user_id FROM user_sessions WHERE session_key = $1", session_key)
+		var user_id int
+		err = row.Scan(&user_id)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		row = db.QueryRow(context.Background(), "SELECT username FROM users WHERE id = $1", user_id)
+		err = row.Scan(&username)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	t.ExecuteTemplate(w, "index.tmpl",
 		map[string]interface{}{
 			"comments": comments,
+			"username": username,
 		},
 	)
 }
@@ -113,14 +142,14 @@ func register(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: sanity check password and username
 
-	salt_len := 8
+	const salt_len = 8
 	salt := make([]byte, salt_len)
 	n, err := rand.Read(salt)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError)
 		return
 	}
-	if n != 8 {
+	if n != salt_len {
 		// crypto/rand guarantees all bytes provided if err == nil
 		log.Fatal("crypto/rand broken")
 	}
@@ -132,11 +161,35 @@ func register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec(context.Background(), "INSERT INTO users(username, password_hash, password_salt) VALUES ($1, $2, $3)", username, hash, salt)
+	row := db.QueryRow(context.Background(),
+		"INSERT INTO users(username, password_hash, password_salt) VALUES ($1, $2, $3) RETURNING id",
+		username, hash, salt)
+	var user_id int
+	err = row.Scan(&user_id)
 	if err != nil {
 		log.Fatal(err)
 	}
-	http.Redirect(w, r, "/login", http.StatusFound)
+
+	const user_session_key_length = 32
+	user_session_key := securecookie.GenerateRandomKey(user_session_key_length)
+	_, err = db.Exec(context.Background(),
+		"INSERT INTO user_sessions(session_key, user_id) VALUES ($1, $2)",
+		user_session_key, user_id)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	session, err := store.Get(r, user_session_name)
+	if err != nil {
+		log.Fatal(err)
+	}
+	session.Values["session_key"] = user_session_key
+	err = session.Save(r, w)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func getDb() (*pgxpool.Pool, error) {
@@ -172,7 +225,26 @@ func main() {
 
 	t = template.Must(template.ParseGlob("./templates/*.tmpl"))
 
-	var err error
+	// To generate a session key, run:
+	//
+	//     func main() {
+	//         fmt.Println(base64.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)))
+	//     }
+
+	const session_key_length = 32
+
+	session_key_b64 := os.Getenv("SESSION_KEY")
+	if session_key_b64 == "" {
+		log.Fatal("Missing session key in environment")
+	}
+	session_key, err := base64.StdEncoding.DecodeString(session_key_b64)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(session_key) != session_key_length {
+		log.Fatal("Invalid session key length")
+	}
+	store = sessions.NewCookieStore(session_key)
 
 	db, err = getDb()
 	if err != nil {

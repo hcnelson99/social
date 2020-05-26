@@ -2,7 +2,7 @@ BEGIN;
 
 DROP TABLE IF EXISTS version;
 DROP TABLE IF EXISTS comments;
-DROP TABLE IF EXISTS user_sesssions;
+DROP TABLE IF EXISTS user_sessions CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE version(
@@ -30,10 +30,11 @@ CREATE TABLE users (
 );
 
 CREATE TABLE user_sessions (
-    session_key TEXT PRIMARY KEY,
+    session_key bytea PRIMARY KEY,
     user_id INTEGER REFERENCES users
     -- login time?
     -- last seen time?
+    -- expiry?
 );
 
 COMMIT;

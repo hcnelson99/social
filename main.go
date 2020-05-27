@@ -16,5 +16,5 @@ func main() {
 		port = "8080"
 	}
 
-	app.Serve(":" + port)
+	app.Start(":" + port)
 }

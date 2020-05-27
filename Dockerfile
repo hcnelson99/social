@@ -19,7 +19,8 @@ COPY go.sum .
 RUN go mod download
 
 # Copy and build source code
-COPY . .
+COPY main.go .
+COPY app ./app
 RUN go build -o main .
 
 ENTRYPOINT CompileDaemon \

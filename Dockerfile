@@ -26,7 +26,8 @@ RUN go build -o main .
 ENTRYPOINT CompileDaemon \
     --build="go build -o main" \
     --command=./main \
-    --pattern=\(\.go\|\.tmpl\)$
+    --pattern=\(\.go\|\.tmpl\)$ \
+    --directory=./app
 
 ########
 # prod #
@@ -35,15 +36,6 @@ ENTRYPOINT CompileDaemon \
 FROM scratch as prod
 
 COPY --from=development /build/main /
-
-# port number to host server on
-ARG PORT
-
-# configuration for connecting to database
-ARG DATABASE_URL
-ARG DATABASE_USERNAME
-ARG DATABASE_PASSWORD
-ARG DATABASE_NAME
 
 ENTRYPOINT ["/main"]
 

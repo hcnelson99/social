@@ -19,7 +19,10 @@ import (
 	"time"
 )
 
-const user_session_name = "login"
+const (
+    SESSION_KEY_LENGTH = 32
+    USER_SESSION_NAME = "login"
+)
 
 var t *template.Template
 var db *pgxpool.Pool
@@ -81,7 +84,7 @@ func getComments(w http.ResponseWriter, r *http.Request) {
 		comments = append(comments, comment)
 	}
 
-	session, err := store.Get(r, user_session_name)
+	session, err := store.Get(r, USER_SESSION_NAME)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -179,7 +182,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	session, err := store.Get(r, user_session_name)
+	session, err := store.Get(r, USER_SESSION_NAME)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -222,17 +225,7 @@ func getDb() (*pgxpool.Pool, error) {
 
 
 func Serve(addr string) {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
 	t = template.Must(template.ParseGlob("./app/templates/*.tmpl"))
-
-	// To generate a session key, run:
-	//
-	//     func main() {
-	//         fmt.Println(base64.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32)))
-	//     }
-
-	const session_key_length = 32
 
 	session_key_b64 := os.Getenv("SESSION_KEY")
 	if session_key_b64 == "" {
@@ -242,9 +235,10 @@ func Serve(addr string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if len(session_key) != session_key_length {
-		log.Fatal("Invalid session key length")
+	if len(session_key) != SESSION_KEY_LENGTH {
+		log.Fatalf("Invalid session key length.")
 	}
+
 	store = sessions.NewCookieStore(session_key)
 
 	db, err = getDb()

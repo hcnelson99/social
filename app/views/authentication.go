@@ -37,7 +37,7 @@ func (app *appViews) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: sanity check password and username
-	userId, err := app.Stores.NewUser(username, password)
+	_, sessionGeneration, err := app.Stores.NewUser(username, password)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError)
 		return
@@ -49,13 +49,7 @@ func (app *appViews) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionKey, err := app.Stores.NewUserSession(userId)
-	if err != nil {
-		httpError(w, http.StatusInternalServerError)
-		return
-	}
-
-	session.Values["session_key"] = sessionKey
+	session.Values["session_generation"] = sessionGeneration
 	err = session.Save(r, w)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError)

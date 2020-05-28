@@ -15,7 +15,7 @@ CREATE TABLE version(
 INSERT INTO version(current) VALUES(1);
 
 CREATE TABLE comments (
-    id SERIAL PRIMARY KEY, 
+    id SERIAL PRIMARY KEY,
     author TEXT NOT NULL,
     date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     text TEXT NOT NULL
@@ -23,18 +23,11 @@ CREATE TABLE comments (
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
+    session_generation INTEGER DEFAULT 0,
     username TEXT NOT NULL UNIQUE,
     password_hash BYTEA NOT NULL,
     password_salt BYTEA NOT NULL
     -- disabling/banning users?
-);
-
-CREATE TABLE user_sessions (
-    session_key bytea PRIMARY KEY,
-    user_id INTEGER REFERENCES users
-    -- login time?
-    -- last seen time?
-    -- expiry?
 );
 
 COMMIT;

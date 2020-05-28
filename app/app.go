@@ -1,13 +1,10 @@
 package app
 
 import (
-	"context"
 	// "crypto/subtle"
 	"encoding/base64"
-	"fmt"
 	"github.com/gorilla/sessions"
 	"github.com/hcnelson99/social/app/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"html/template"
 	"log"
 	"net/http"
@@ -17,34 +14,6 @@ import (
 const (
 	SESSION_KEY_LENGTH = 32
 )
-
-func getDb() (*pgxpool.Pool, error) {
-	username := os.Getenv("DATABASE_USERNAME")
-	password := os.Getenv("DATABASE_PASSWORD")
-	url := os.Getenv("DATABASE_URL")
-	name := os.Getenv("DATABASE_NAME")
-
-	var connUrl string
-	if username == "" && password == "" {
-		connUrl = fmt.Sprintf(
-			"postgres://%s/%s",
-			url,
-			name,
-		)
-	} else {
-		connUrl = fmt.Sprintf(
-			"postgres://%s:%s@%s/%s",
-			username,
-			password,
-			url,
-			name,
-		)
-	}
-
-	log.Printf("Connecting to database: postgres://%s/%s\n", url, name)
-
-	return pgxpool.Connect(context.Background(), connUrl)
-}
 
 func Start(addr string) {
 	var app types.App
@@ -63,13 +32,13 @@ func Start(addr string) {
 		log.Fatalf("Invalid session key length.")
 	}
 
-	app.Store = sessions.NewCookieStore(session_key)
+	app.SessionStore = sessions.NewCookieStore(session_key)
 
-	app.Db, err = getDb()
+	err = app.Stores.Init()
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v\n", err)
 	}
-	defer app.Db.Close()
+	defer app.Stores.Close()
 
 	http.Handle("/", GetRouter(&app))
 

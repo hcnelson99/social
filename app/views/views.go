@@ -5,10 +5,6 @@ import (
 	"net/http"
 )
 
-const (
-	USER_SESSION_NAME = "login"
-)
-
 type viewState struct {
 	*types.App
 	response http.ResponseWriter

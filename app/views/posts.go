@@ -35,12 +35,18 @@ func GetComments(view *viewState) {
 		return
 	}
 
+	context := map[string]interface{}{
+		"comments": comments,
+	}
+
+	user := view.checkLogin()
+	if user != nil {
+		context["username"] = user.Username
+	}
+
 	view.Templates.ExecuteTemplate(
 		view.response,
 		"index.tmpl",
-		map[string]interface{}{
-			"comments": comments,
-			"username": "Steven Shan",
-		},
+		context,
 	)
 }

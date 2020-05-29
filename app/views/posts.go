@@ -5,38 +5,38 @@ import (
 	"net/http"
 )
 
-func getPostFormValue(r *http.Request, key string) (string, bool) {
-	r.ParseForm()
-	values, success := r.PostForm[key]
+func getPostFormValue(request *http.Request, key string) (string, bool) {
+	request.ParseForm()
+	values, success := request.PostForm[key]
 	if !success || len(values) != 1 {
 		return "", false
 	}
 	return values[0], true
 }
 
-func (app *appViews) PostComment(w http.ResponseWriter, r *http.Request) {
-	comment, success := getPostFormValue(r, "comment")
+func PostComment(view *viewState) {
+	comment, success := getPostFormValue(view.request, "comment")
 	if !success {
-		httpError(w, http.StatusBadRequest)
+		httpError(view.response, http.StatusBadRequest)
 		return
 	}
 
-	if app.Stores.NewComment(comment) != nil {
-		httpError(w, http.StatusBadRequest)
+	if view.Stores.NewComment(comment) != nil {
+		httpError(view.response, http.StatusBadRequest)
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(view.response, view.request, "/", http.StatusFound)
 }
 
-func (app *appViews) GetComments(w http.ResponseWriter, r *http.Request) {
-	comments, err := app.Stores.GetAllComments()
+func GetComments(view *viewState) {
+	comments, err := view.Stores.GetAllComments()
 	if err != nil {
-		httpError(w, http.StatusBadRequest)
+		httpError(view.response, http.StatusBadRequest)
 		return
 	}
 
-	_, err = app.SessionStore.Get(r, USER_SESSION_NAME)
+	_, err = view.SessionStore.Get(view.request, USER_SESSION_NAME)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,7 +58,9 @@ func (app *appViews) GetComments(w http.ResponseWriter, r *http.Request) {
 		}
 	*/
 
-	app.Templates.ExecuteTemplate(w, "index.tmpl",
+	view.Templates.ExecuteTemplate(
+		view.response,
+		"index.tmpl",
 		map[string]interface{}{
 			"comments": comments,
 			"username": "Steven Shan",

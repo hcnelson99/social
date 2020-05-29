@@ -9,20 +9,19 @@ const (
 	USER_SESSION_NAME = "login"
 )
 
-type appViews struct {
+type viewState struct {
 	*types.App
+	response http.ResponseWriter
+	request  *http.Request
 }
 
-type Views interface {
-	GetComments(http.ResponseWriter, *http.Request)
-	PostComment(http.ResponseWriter, *http.Request)
-	GetLogin(http.ResponseWriter, *http.Request)
-	PostLogin(http.ResponseWriter, *http.Request)
-	Register(http.ResponseWriter, *http.Request)
-}
+type ViewFunction = func(*viewState)
+type HttpHandler = func(http.ResponseWriter, *http.Request)
 
-func For(app *types.App) Views {
-	return &appViews{app}
+func Get(app *types.App, viewFunc ViewFunction) HttpHandler {
+	return func(response http.ResponseWriter, request *http.Request) {
+		viewFunc(&viewState{app, response, request})
+	}
 }
 
 func httpError(w http.ResponseWriter, code int) {

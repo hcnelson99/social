@@ -26,8 +26,7 @@ RUN go build -o main .
 ENTRYPOINT CompileDaemon \
     --build="go build -o main" \
     --command=./main \
-    --pattern=\(\.go\|\.tmpl\)$ \
-    --directory=./app
+    --pattern=\(\.go\|\.tmpl\)$
 
 ########
 # prod #

@@ -121,7 +121,7 @@ func (stores *Stores) CheckUserSession(userId, sessionGeneration int) *User {
 func (stores *Stores) NewUser(username, password string) (*User, int) {
 	hash := hashPassword(password)
 	if hash == nil {
-		return nil, -1
+		return nil, 0
 	}
 
 	row := stores.db.QueryRow(context.Background(),
@@ -132,12 +132,12 @@ func (stores *Stores) NewUser(username, password string) (*User, int) {
 	var sessionGeneration int
 	if err := row.Scan(&userId, &sessionGeneration); err != nil {
 		log.Print("couldn't create user in database", err)
-		return nil, -1
+		return nil, 0
 	}
 
-	if userId < 0 || sessionGeneration < 0 {
-		log.Print("database inconsistent: user_id and session_generation should be >= 0")
-		return nil, -1
+	if userId <= 0 || sessionGeneration <= 0 {
+		log.Print("database inconsistent: user_id and session_generation should be > 0")
+		return nil, 0
 	}
 
 	return newUser(username, userId), sessionGeneration
@@ -157,7 +157,7 @@ func (stores *Stores) NewUserSession(userId int) int {
 
 	var sessionGeneration int
 	if err := row.Scan(&sessionGeneration); err != nil {
-		return -1
+		return 0
 	}
 
 	return sessionGeneration
@@ -178,7 +178,7 @@ func (stores *Stores) Login(username, password string) (*User, int, AuthStatus) 
 	var passwordHash []byte
 	var sessionGeneration int
 	if err := row.Scan(&userId, &passwordHash, &sessionGeneration); err != nil {
-		return nil, -1, AUTH_ERROR
+		return nil, 0, AUTH_ERROR
 	}
 
 	status := checkPassword(passwordHash, password)
@@ -186,5 +186,5 @@ func (stores *Stores) Login(username, password string) (*User, int, AuthStatus) 
 		return newUser(username, userId), sessionGeneration, status
 	}
 
-	return nil, -1, status
+	return nil, 0, status
 }

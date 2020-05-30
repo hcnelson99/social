@@ -19,8 +19,13 @@ func GetRouter(app *types.App) *mux.Router {
 	r.PathPrefix("/static").Handler(http.StripPrefix("/static/", staticFileServer))
 	r.HandleFunc("/", getView(views.GetComments)).Methods("GET")
 	r.HandleFunc("/comment", getView(views.PostComment)).Methods("POST")
-	r.HandleFunc("/login", getView(views.GetLogin)).Methods("GET")
-	r.HandleFunc("/login/post", getView(views.PostLogin)).Methods("POST")
+	r.HandleFunc(
+		"/login",
+		views.GetMethods(app, views.HandlerMap{
+			GET:  views.GetLogin,
+			POST: views.PostLogin,
+		}),
+	).Methods("GET", "POST")
 	r.HandleFunc("/login/register", getView(views.Register)).Methods("POST")
 
 	return r

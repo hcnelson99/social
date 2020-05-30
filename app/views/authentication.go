@@ -37,13 +37,13 @@ func Register(view *viewState) {
 	}
 
 	// TODO: sanity check password and username
-	userId, sessionGeneration := view.Stores.NewUser(username, password)
-	if userId < 0 {
+	user, sessionGeneration := view.Stores.NewUser(username, password)
+	if user == nil {
 		httpError(view.response, http.StatusInternalServerError)
 		return
 	}
 
-	if err := view.setUserSession(userId, sessionGeneration); err != nil {
+	if err := view.setUserSession(user.UserId, sessionGeneration); err != nil {
 		httpError(view.response, http.StatusInternalServerError)
 		return
 	}

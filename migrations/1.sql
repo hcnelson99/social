@@ -25,8 +25,7 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     session_generation INTEGER DEFAULT 0,
     username TEXT NOT NULL UNIQUE,
-    password_hash BYTEA NOT NULL,
-    password_salt BYTEA NOT NULL
+    password BYTEA NOT NULL
     -- disabling/banning users?
 );
 

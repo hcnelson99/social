@@ -25,7 +25,7 @@ func PostComment(view *viewState) {
 		return
 	}
 
-	http.Redirect(view.response, view.request, "/", http.StatusFound)
+	view.redirect("/")
 }
 
 func GetComments(view *viewState) {

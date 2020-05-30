@@ -9,8 +9,13 @@ const (
 	LOGIN_TEMPLATE = "login.tmpl"
 )
 
+func renderAuthTemplate(view *viewState, template string, context map[string]interface{}) {
+	context["uri"] = view.request.URL.RequestURI()
+	view.Templates.ExecuteTemplate(view.response, template, context)
+}
+
 func GetLogin(view *viewState) {
-	view.Templates.ExecuteTemplate(view.response, LOGIN_TEMPLATE, nil)
+	renderAuthTemplate(view, LOGIN_TEMPLATE, map[string]interface{}{})
 }
 
 func PostLogin(view *viewState) {
@@ -31,15 +36,20 @@ func PostLogin(view *viewState) {
 
 	user, sessionGen, authStatus := view.Stores.Login(username, password)
 	if authStatus == stores.AUTH_VALIDATED && view.setUserSession(user.UserId, sessionGen) {
-		http.Redirect(view.response, view.request, "/", http.StatusFound)
+		next, ok := view.request.URL.Query()[CONTINUE_QUERY_KEY]
+		if ok && len(next) == 1 {
+			view.redirect(next[0])
+		} else {
+			view.redirect("/")
+		}
 	} else {
-		if authStatus == stores.AUTH_ERROR {
+		if authStatus != stores.AUTH_REJECTED {
 			context["error"] = "Internal server error while logging in. Please try again later."
 		}
 		context["invalid_auth"] = true
 	}
 
-	view.Templates.ExecuteTemplate(view.response, LOGIN_TEMPLATE, context)
+	renderAuthTemplate(view, LOGIN_TEMPLATE, context)
 }
 
 func Register(view *viewState) {
@@ -66,5 +76,5 @@ func Register(view *viewState) {
 		return
 	}
 
-	http.Redirect(view.response, view.request, "/", http.StatusFound)
+	view.redirect("/")
 }

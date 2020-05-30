@@ -23,11 +23,20 @@ func getUserSession(view *viewState) *sessions.Session {
 	return session
 }
 
-func (view *viewState) setUserSession(userId, sessionGeneration int) error {
+/*
+   Sets the user session so the user stays authenticated.
+
+   Returns false if the session was created successfully, and true on failure.
+*/
+func (view *viewState) setUserSession(userId, sessionGeneration int) bool {
 	session := getUserSession(view)
 	session.Values[SESSION_USER_ID_KEY] = userId
 	session.Values[SESSION_GENERATION_KEY] = sessionGeneration
-	return session.Save(view.request, view.response)
+	if err := session.Save(view.request, view.response); err != nil {
+		log.Print("couldn't save user session", err)
+		return false
+	}
+	return true
 }
 
 /*

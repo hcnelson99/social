@@ -40,7 +40,7 @@ func PostLogin(view *viewState) {
 		if ok && len(next) == 1 {
 			view.redirect(next[0])
 		} else {
-			view.redirect("/")
+			view.redirect(view.routes.Default)
 		}
 	} else {
 		if authStatus != stores.AUTH_REJECTED {
@@ -76,5 +76,5 @@ func Register(view *viewState) {
 		return
 	}
 
-	view.redirect("/")
+	view.redirect(view.routes.Default)
 }

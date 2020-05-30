@@ -96,9 +96,9 @@ func (view *viewState) checkLogin() *stores.User {
    This also handles directing the user back to the page they were on after they log in.
 */
 func (view *viewState) gotoLogin() {
-	base, err := url.Parse("/login")
+	base, err := url.Parse(view.routes.Login)
 	if err != nil || view.request.Method != "GET" {
-		view.redirect("/login")
+		view.redirect(view.routes.Login)
 		return
 	}
 
@@ -111,3 +111,4 @@ func (view *viewState) gotoLogin() {
 
 	view.redirect(base.String())
 }
+

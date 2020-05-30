@@ -7,21 +7,31 @@ import (
 	"net/http"
 )
 
+const (
+	DEFAULT_ROUTE = "/"
+	LOGIN_ROUTE   = "/login"
+)
+
 func GetRouter(app *types.App) *mux.Router {
 	staticFileServer := http.FileServer(http.Dir("./app/static"))
 
+	routes := &views.RouteConfig{
+		Default: DEFAULT_ROUTE,
+		Login:   LOGIN_ROUTE,
+	}
+
 	getView := func(v views.ViewFunction) views.HttpHandler {
-		return views.Get(app, v)
+		return views.Get(app, routes, v)
 	}
 
 	// TODO: add CSRF everywhere!
 	r := mux.NewRouter()
 	r.PathPrefix("/static").Handler(http.StripPrefix("/static/", staticFileServer))
-	r.HandleFunc("/", getView(views.GetComments)).Methods("GET")
+	r.HandleFunc(DEFAULT_ROUTE, getView(views.GetComments)).Methods("GET")
 	r.HandleFunc("/comment", getView(views.PostComment)).Methods("POST")
 	r.HandleFunc(
-		"/login",
-		views.GetMethods(app, views.HandlerMap{
+		LOGIN_ROUTE,
+		views.GetMethods(app, routes, views.HandlerMap{
 			GET:  views.GetLogin,
 			POST: views.PostLogin,
 		}),

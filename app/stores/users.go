@@ -116,7 +116,9 @@ func (stores *Stores) CheckUserSession(userId, sessionGeneration int) *User {
    Creates a new user.
 
    Returns a pointer to a `User` struct and a session generation number upon
-    success. See `NewUserSession` for details about the session generation.
+   success. This generation number incremented to invalidate existing sessions.
+   It is only valid when it is equal to the session_generation column in the
+   user table.
 */
 func (stores *Stores) NewUser(username, password string) (*User, int) {
 	hash := hashPassword(password)
@@ -144,26 +146,6 @@ func (stores *Stores) NewUser(username, password string) (*User, int) {
 }
 
 /*
-   Creates a new login session for a user.
-
-   Returns a session_generation number. This generation number incremented
-   to invalidate existing sessions. It is only valid when it is equal to the
-   session_generation column in the user table.
-*/
-func (stores *Stores) NewUserSession(userId int) int {
-	row := stores.db.QueryRow(context.Background(),
-		"SELECT session_generation FROM users WHERE id=$1",
-		userId)
-
-	var sessionGeneration int
-	if err := row.Scan(&sessionGeneration); err != nil {
-		return 0
-	}
-
-	return sessionGeneration
-}
-
-/*
    Authenticates a user.
 
    If the returned `AuthStatus` is `AUTH_VALIDATED`, the user was successfully
@@ -187,4 +169,23 @@ func (stores *Stores) Login(username, password string) (*User, int, AuthStatus) 
 	}
 
 	return nil, 0, status
+}
+
+/*
+   Invalidates all sessions by the user.
+
+   This will sign them out of all devices.
+
+   Returns true on success, false on failure.
+*/
+func (stores *Stores) InvalidateUserSessions(userId int) bool {
+	_, err := stores.db.Exec(
+		context.Background(),
+		"UPDATE users SET session_generation=session_generation + 1 WHERE id=$1",
+		userId)
+	if err != nil {
+		log.Print("error while invalidating all user sessions", userId, err)
+		return false
+	}
+	return true
 }

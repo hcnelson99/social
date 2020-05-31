@@ -17,6 +17,9 @@ const (
 
 	// URL query key indicating a URI to redirect to
 	CONTINUE_QUERY_KEY = "continue"
+
+	// URL query key indicating an error message to display after a redirect
+	ERROR_QUERY_KEY = "error"
 )
 
 func getUserSession(view *viewState) *sessions.Session {
@@ -54,11 +57,22 @@ func (view *viewState) setUserSession(userId, sessionGeneration int) bool {
 func (view *viewState) clearSession() {
 	if session := getUserSession(view); session != nil {
 		session.Options.MaxAge = -1
+
+		if err := session.Save(view.request, view.response); err != nil {
+			log.Print("failed to clear session", err)
+		}
 	}
 }
 
-func (view *viewState) redirect(uri string) {
-	url := path.Join("/", uri)
+func (view *viewState) redirect(redirectPath string, queryParams map[string]string) {
+	params := url.Values{}
+	for key, value := range queryParams {
+		params.Add(key, value)
+	}
+	url := path.Join("/", redirectPath)
+	if rawParams := params.Encode(); rawParams != "" {
+		url = url + "?" + rawParams
+	}
 	http.Redirect(view.response, view.request, url, http.StatusFound)
 }
 
@@ -96,19 +110,14 @@ func (view *viewState) checkLogin() *stores.User {
    This also handles directing the user back to the page they were on after they log in.
 */
 func (view *viewState) gotoLogin() {
-	base, err := url.Parse(view.routes.Login)
-	if err != nil || view.request.Method != "GET" {
-		view.redirect(view.routes.Login)
-		return
-	}
+	var queryParams map[string]string
 
-	params := url.Values{}
 	uri := view.request.URL.RequestURI()
-	if uri != "/" {
-		params.Add(CONTINUE_QUERY_KEY, uri)
+	if view.request.Method == "GET" && uri != view.routes.Default {
+		queryParams = map[string]string{
+			CONTINUE_QUERY_KEY: uri,
+		}
 	}
-	base.RawQuery = params.Encode()
 
-	view.redirect(base.String())
+	view.redirect(view.routes.Login, queryParams)
 }
-

@@ -25,7 +25,7 @@ func PostComment(view *viewState) {
 		return
 	}
 
-	view.redirect(view.routes.Default)
+	view.redirect(view.routes.Default, nil)
 }
 
 func GetComments(view *viewState) {

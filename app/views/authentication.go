@@ -6,15 +6,25 @@ import (
 )
 
 const (
-	LOGIN_TEMPLATE = "login.tmpl"
+	LOGIN_TEMPLATE               = "login.tmpl"
+	INVALIDATE_SESSIONS_TEMPLATE = "invalidate_sessions.tmpl"
 )
 
 func renderAuthTemplate(view *viewState, template string, context map[string]interface{}) {
+	if context == nil {
+		context = map[string]interface{}{}
+	}
 	context["uri"] = view.request.URL.RequestURI()
 	view.Templates.ExecuteTemplate(view.response, template, context)
 }
 
 func GetLogin(view *viewState) {
+	// if user is already logged in, redirect to the homepage
+	if view.checkLogin() != nil {
+		view.redirect(view.routes.Default, nil)
+		return
+	}
+
 	renderAuthTemplate(view, LOGIN_TEMPLATE, map[string]interface{}{})
 }
 
@@ -38,9 +48,9 @@ func PostLogin(view *viewState) {
 	if authStatus == stores.AUTH_VALIDATED && view.setUserSession(user.UserId, sessionGen) {
 		next, ok := view.request.URL.Query()[CONTINUE_QUERY_KEY]
 		if ok && len(next) == 1 {
-			view.redirect(next[0])
+			view.redirect(next[0], nil)
 		} else {
-			view.redirect(view.routes.Default)
+			view.redirect(view.routes.Default, nil)
 		}
 	} else {
 		if authStatus != stores.AUTH_REJECTED {
@@ -76,5 +86,32 @@ func Register(view *viewState) {
 		return
 	}
 
-	view.redirect(view.routes.Default)
+	view.redirect(view.routes.Default, nil)
+}
+
+/*
+   Logs out the user and redirects them to the homepage.
+*/
+func Logout(view *viewState) {
+	view.clearSession()
+	view.redirect(view.routes.Default, nil)
+}
+
+/*
+   Logs the user out of all devices and redirects them to the homepage.
+
+   This increments the session generation number in the table.
+*/
+func InvalidateUserSessions(view *viewState) {
+	var queryParams map[string]string
+
+	if user := view.checkLogin(); user != nil {
+		if !view.Stores.InvalidateUserSessions(user.UserId) {
+			queryParams = map[string]string{
+				ERROR_QUERY_KEY: "error-invalidate-user-sessions",
+			}
+		}
+	}
+
+	view.redirect(view.routes.Default, queryParams)
 }

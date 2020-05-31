@@ -62,7 +62,7 @@ func PostLogin(view *viewState) {
 	renderAuthTemplate(view, LOGIN_TEMPLATE, context)
 }
 
-func Register(view *viewState) {
+func PostRegister(view *viewState) {
 	username, success := getPostFormValue(view.request, "username")
 	if !success {
 		httpError(view.response, http.StatusBadRequest)
@@ -92,7 +92,7 @@ func Register(view *viewState) {
 /*
    Logs out the user and redirects them to the homepage.
 */
-func Logout(view *viewState) {
+func GetLogout(view *viewState) {
 	view.clearSession()
 	view.redirect(view.routes.Default, nil)
 }
@@ -102,7 +102,7 @@ func Logout(view *viewState) {
 
    This increments the session generation number in the table.
 */
-func InvalidateUserSessions(view *viewState) {
+func GetInvalidateUserSessions(view *viewState) {
 	var queryParams map[string]string
 
 	if user := view.checkLogin(); user != nil {

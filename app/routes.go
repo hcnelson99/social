@@ -36,9 +36,9 @@ func GetRouter(app *types.App) *mux.Router {
 			POST: views.PostLogin,
 		}),
 	).Methods("GET", "POST")
-	r.HandleFunc("/login/register", getView(views.Register)).Methods("POST")
-	r.HandleFunc("/logout", getView(views.Logout)).Methods("GET")
-	r.HandleFunc("/logout-all", getView(views.InvalidateUserSessions)).Methods("GET")
+	r.HandleFunc("/login/register", getView(views.PostRegister)).Methods("POST")
+	r.HandleFunc("/logout", getView(views.GetLogout)).Methods("GET")
+	r.HandleFunc("/logout-all", getView(views.GetInvalidateUserSessions)).Methods("GET")
 
 	return r
 }

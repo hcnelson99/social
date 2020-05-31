@@ -108,10 +108,10 @@ func GetInvalidateUserSessions(view *viewState) {
 	if user := view.checkLogin(); user != nil {
 		if !view.Stores.InvalidateUserSessions(user.UserId) {
 			queryParams = map[string]string{
-				ERROR_QUERY_KEY: "error-invalidate-user-sessions",
+				ERROR_QUERY_KEY: ERROR_INVALIDATE_USER_SESSIONS,
 			}
 		}
 	}
 
-	view.redirect(view.routes.Default, queryParams)
+	view.redirect(view.routes.Error, queryParams)
 }

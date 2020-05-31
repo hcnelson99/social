@@ -8,6 +8,7 @@ import (
 type RouteConfig struct {
 	Default string
 	Login   string
+	Error   string
 }
 
 type viewState struct {

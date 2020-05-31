@@ -10,6 +10,7 @@ import (
 const (
 	DEFAULT_ROUTE = "/"
 	LOGIN_ROUTE   = "/login"
+	ERROR_ROUTE   = "/error"
 )
 
 func GetRouter(app *types.App) *mux.Router {
@@ -18,6 +19,7 @@ func GetRouter(app *types.App) *mux.Router {
 	routes := &views.RouteConfig{
 		Default: DEFAULT_ROUTE,
 		Login:   LOGIN_ROUTE,
+		Error:   ERROR_ROUTE,
 	}
 
 	getView := func(v views.ViewFunction) views.HttpHandler {
@@ -37,6 +39,7 @@ func GetRouter(app *types.App) *mux.Router {
 		}),
 	).Methods("GET", "POST")
 	r.HandleFunc("/login/register", getView(views.PostRegister)).Methods("POST")
+	r.HandleFunc("/error", getView(views.GetError)).Methods("GET")
 	r.HandleFunc("/logout", getView(views.GetLogout)).Methods("GET")
 	r.HandleFunc("/logout-all", getView(views.GetInvalidateUserSessions)).Methods("GET")
 

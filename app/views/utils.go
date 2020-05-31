@@ -14,12 +14,6 @@ const (
 	USER_SESSION_NAME      = "user"
 	SESSION_USER_ID_KEY    = "user_id"
 	SESSION_GENERATION_KEY = "session_generation"
-
-	// URL query key indicating a URI to redirect to
-	CONTINUE_QUERY_KEY = "continue"
-
-	// URL query key indicating an error message to display after a redirect
-	ERROR_QUERY_KEY = "error"
 )
 
 func getUserSession(view *viewState) *sessions.Session {

@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html>
         <head>
-        <title>Login</title>
+        <title>Register</title>
         </head>
 
         <body>
 
         {{ .error }}
 
-        <h1>Login</h1>
+        <h1>Register</h1>
 
         <form method="post" action="{{ .uri }}">
         <p>Username:</p>
         <input type="text" name="username" spellcheck="false" autofocus="true">
         <p>Password:</p>
         <input type="password" name="password">
-        <input type="submit" value="login">
+        <input type="submit" value="register">
         </form>
 
         </body>

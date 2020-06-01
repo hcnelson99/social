@@ -23,7 +23,7 @@ CREATE TABLE comments (
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    session_generation INTEGER DEFAULT 0,
+    session_generation INTEGER DEFAULT 1,
     username TEXT NOT NULL UNIQUE,
     password BYTEA NOT NULL
     -- disabling/banning users?

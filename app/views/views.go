@@ -2,6 +2,7 @@ package views
 
 import (
 	"github.com/hcnelson99/social/app/types"
+	"github.com/hcnelson99/social/app/views/languages"
 	"net/http"
 )
 
@@ -15,15 +16,22 @@ type viewState struct {
 	*types.App
 	response http.ResponseWriter
 	request  *http.Request
-	routes   *RouteConfig
+	routes   RouteConfig
+	language languages.Language
 }
 
 type ViewFunction = func(*viewState)
 type HttpHandler = func(http.ResponseWriter, *http.Request)
 
-func Get(app *types.App, routes *RouteConfig, viewFunc ViewFunction) HttpHandler {
+func Get(app *types.App, routes RouteConfig, viewFunc ViewFunction) HttpHandler {
 	return func(response http.ResponseWriter, request *http.Request) {
-		viewFunc(&viewState{app, response, request, routes})
+		viewFunc(&viewState{
+			app,
+			response,
+			request,
+			routes,
+			languages.English,
+		})
 	}
 }
 
@@ -44,7 +52,7 @@ func callHandler(viewFunc ViewFunction, view *viewState) {
 	}
 }
 
-func GetMethods(app *types.App, routes *RouteConfig, handlers HandlerMap) HttpHandler {
+func GetMethods(app *types.App, routes RouteConfig, handlers HandlerMap) HttpHandler {
 	return Get(app, routes, func(view *viewState) {
 		var viewFunc ViewFunction
 		switch view.request.Method {

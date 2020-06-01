@@ -3,6 +3,7 @@ package app
 import (
 	// "crypto/subtle"
 	"encoding/base64"
+	"github.com/gorilla/schema"
 	"github.com/gorilla/sessions"
 	"github.com/hcnelson99/social/app/types"
 	"html/template"
@@ -19,6 +20,11 @@ func Start(addr string) {
 	var app types.App
 
 	app.Templates = template.Must(template.ParseGlob("./app/templates/*.tmpl"))
+
+	app.SchemaDecoder = schema.NewDecoder()
+	if app.SchemaDecoder == nil {
+		log.Fatal("Could not initialize schema decoder")
+	}
 
 	session_key_b64 := os.Getenv("SESSION_KEY")
 	if session_key_b64 == "" {

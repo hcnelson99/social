@@ -115,3 +115,25 @@ func (view *viewState) gotoLogin() {
 
 	view.redirect(view.routes.Login, queryParams)
 }
+
+/*
+   Wrapper to parse POST form data.
+
+   Arguments:
+       form: a pointer to the form struct to write the data to (must be non-nil)
+
+   Returns nil if the form was parsed successfully, else return an error.
+*/
+func (view *viewState) parseForm(form interface{}) error {
+	err := view.request.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	err = view.SchemaDecoder.Decode(form, view.request.PostForm)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

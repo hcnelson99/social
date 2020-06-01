@@ -4,23 +4,19 @@ import (
 	"net/http"
 )
 
-func getPostFormValue(request *http.Request, key string) (string, bool) {
-	request.ParseForm()
-	values, success := request.PostForm[key]
-	if !success || len(values) != 1 {
-		return "", false
-	}
-	return values[0], true
+type commentForm struct {
+	Comment string
 }
 
 func PostComment(view *viewState) {
-	comment, success := getPostFormValue(view.request, "comment")
-	if !success {
+	var commentData commentForm
+
+	if view.parseForm(&commentData) != nil {
 		httpError(view.response, http.StatusBadRequest)
 		return
 	}
 
-	if view.Stores.NewComment(comment) != nil {
+	if view.Stores.NewComment(commentData.Comment) != nil {
 		httpError(view.response, http.StatusBadRequest)
 		return
 	}

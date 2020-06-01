@@ -2,13 +2,18 @@ package views
 
 import (
 	"github.com/hcnelson99/social/app/stores"
-	"net/http"
 )
 
 const (
 	LOGIN_TEMPLATE               = "login.tmpl"
+	REGISTER_TEMPLATE            = "register.tmpl"
 	INVALIDATE_SESSIONS_TEMPLATE = "invalidate_sessions.tmpl"
 )
+
+type authForm struct {
+	Username string
+	Password string
+}
 
 func renderAuthTemplate(view *viewState, template string, context map[string]interface{}) {
 	if context == nil {
@@ -25,68 +30,68 @@ func GetLogin(view *viewState) {
 		return
 	}
 
-	renderAuthTemplate(view, LOGIN_TEMPLATE, map[string]interface{}{})
+	renderAuthTemplate(view, LOGIN_TEMPLATE, nil)
 }
 
 func PostLogin(view *viewState) {
-	username, success := getPostFormValue(view.request, "username")
-	if !success {
-		httpError(view.response, http.StatusBadRequest)
-		return
-	}
-	password, success := getPostFormValue(view.request, "password")
-	if !success {
-		httpError(view.response, http.StatusBadRequest)
-		return
-	}
+	context := map[string]interface{}{}
 
-	context := map[string]interface{}{
-		"invalid_auth": false,
-	}
+	var loginData authForm
+	if view.parseForm(&loginData) == nil {
+		username := loginData.Username
+		password := loginData.Password
 
-	user, sessionGen, authStatus := view.Stores.Login(username, password)
-	if authStatus == stores.AUTH_VALIDATED && view.setUserSession(user.UserId, sessionGen) {
-		next, ok := view.request.URL.Query()[CONTINUE_QUERY_KEY]
-		if ok && len(next) == 1 {
-			view.redirect(next[0], nil)
+		user, sessionGen, authStatus := view.Stores.Login(username, password)
+		if authStatus == stores.AUTH_VALIDATED && view.setUserSession(user.UserId, sessionGen) {
+			next, ok := view.request.URL.Query()[CONTINUE_QUERY_KEY]
+			if ok && len(next) == 1 {
+				view.redirect(next[0], nil)
+			} else {
+				view.redirect(view.routes.Default, nil)
+			}
+		} else if authStatus != stores.AUTH_REJECTED {
+			context[TEMPLATE_ERROR] = view.language.ERROR_LOGGING_IN
 		} else {
-			view.redirect(view.routes.Default, nil)
+			context[TEMPLATE_ERROR] = view.language.LOGIN_REJECTED
 		}
 	} else {
-		if authStatus != stores.AUTH_REJECTED {
-			context["error"] = "Internal server error while logging in. Please try again later."
-		}
-		context["invalid_auth"] = true
+		context[TEMPLATE_ERROR] = view.language.ERROR_LOGGING_IN
 	}
 
 	renderAuthTemplate(view, LOGIN_TEMPLATE, context)
 }
 
+func GetRegister(view *viewState) {
+	if view.checkLogin() != nil {
+		view.redirect(view.routes.Default, nil)
+		return
+	}
+
+	renderAuthTemplate(view, REGISTER_TEMPLATE, nil)
+}
+
 func PostRegister(view *viewState) {
-	username, success := getPostFormValue(view.request, "username")
-	if !success {
-		httpError(view.response, http.StatusBadRequest)
-		return
-	}
-	password, success := getPostFormValue(view.request, "password")
-	if !success {
-		httpError(view.response, http.StatusBadRequest)
-		return
+	var registerData authForm
+	context := map[string]interface{}{}
+	if view.parseForm(&registerData) == nil {
+		username := registerData.Username
+		password := registerData.Password
+
+		// TODO: sanity check password and username
+		user, sessionGeneration := view.Stores.NewUser(username, password)
+		if user == nil {
+			context[TEMPLATE_ERROR] = view.language.USERNAME_TAKEN
+		} else if view.setUserSession(user.UserId, sessionGeneration) {
+			view.redirect(view.routes.Default, nil)
+			return
+		} else {
+			context[TEMPLATE_ERROR] = view.language.ERROR_REGISTERING
+		}
+	} else {
+		context[TEMPLATE_ERROR] = view.language.ERROR_REGISTERING
 	}
 
-	// TODO: sanity check password and username
-	user, sessionGeneration := view.Stores.NewUser(username, password)
-	if user == nil {
-		httpError(view.response, http.StatusInternalServerError)
-		return
-	}
-
-	if view.setUserSession(user.UserId, sessionGeneration) {
-		httpError(view.response, http.StatusInternalServerError)
-		return
-	}
-
-	view.redirect(view.routes.Default, nil)
+	renderAuthTemplate(view, REGISTER_TEMPLATE, context)
 }
 
 /*
@@ -103,15 +108,15 @@ func GetLogout(view *viewState) {
    This increments the session generation number in the table.
 */
 func GetInvalidateUserSessions(view *viewState) {
-	var queryParams map[string]string
-
 	if user := view.checkLogin(); user != nil {
 		if !view.Stores.InvalidateUserSessions(user.UserId) {
-			queryParams = map[string]string{
+			queryParams := map[string]string{
 				ERROR_QUERY_KEY: ERROR_INVALIDATE_USER_SESSIONS,
 			}
+			view.redirect(view.routes.Error, queryParams)
+			return
 		}
 	}
 
-	view.redirect(view.routes.Error, queryParams)
+	view.redirect(view.routes.Default, nil)
 }

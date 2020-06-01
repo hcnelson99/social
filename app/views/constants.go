@@ -17,3 +17,8 @@ const (
 const (
 	ERROR_INVALIDATE_USER_SESSIONS = "error-invalidate-user-sessions"
 )
+
+// Template constants: variable names used in template rendering
+const (
+	TEMPLATE_ERROR = "error"
+)

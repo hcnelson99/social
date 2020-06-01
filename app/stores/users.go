@@ -160,7 +160,7 @@ func (stores *Stores) Login(username, password string) (*User, int, AuthStatus) 
 	var passwordHash []byte
 	var sessionGeneration int
 	if err := row.Scan(&userId, &passwordHash, &sessionGeneration); err != nil {
-		return nil, 0, AUTH_ERROR
+		return nil, 0, AUTH_REJECTED
 	}
 
 	status := checkPassword(passwordHash, password)

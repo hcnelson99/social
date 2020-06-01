@@ -16,7 +16,7 @@ const (
 func GetRouter(app *types.App) *mux.Router {
 	staticFileServer := http.FileServer(http.Dir("./app/static"))
 
-	routes := &views.RouteConfig{
+	routes := views.RouteConfig{
 		Default: DEFAULT_ROUTE,
 		Login:   LOGIN_ROUTE,
 		Error:   ERROR_ROUTE,
@@ -38,7 +38,13 @@ func GetRouter(app *types.App) *mux.Router {
 			POST: views.PostLogin,
 		}),
 	).Methods("GET", "POST")
-	r.HandleFunc("/login/register", getView(views.PostRegister)).Methods("POST")
+	r.HandleFunc(
+		"/register",
+		views.GetMethods(app, routes, views.HandlerMap{
+			GET:  views.GetRegister,
+			POST: views.PostRegister,
+		}),
+	).Methods("GET", "POST")
 	r.HandleFunc("/error", getView(views.GetError)).Methods("GET")
 	r.HandleFunc("/logout", getView(views.GetLogout)).Methods("GET")
 	r.HandleFunc("/logout-all", getView(views.GetInvalidateUserSessions)).Methods("GET")

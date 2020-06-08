@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+        <head>
+        <title>Home page</title>
+        <link rel="stylesheet" href="static/style.css">
+        </head>
+
+        <body>
+
+        {% if username %}
+                <p>Hello <b>{{ username }} </b>! You are logged in! </p>
+        {% endif %}
+
+        <h1>Posts</h1>
+
+        <div>
+            {% for post in comments %}
+                <div class="post"> 
+                        <p> <b>{{ post.author }}</b> <i>({{ post.date }})</i> </p>
+                        <p class=>
+                        {{ post.content|first }}
+                        </p>
+
+                        <input type="checkbox" id="toggle-{{forloop.counter}}">
+
+                        {% for paragraph in post.content|drop:1 %} 
+                                <p class="hidden-paragraph">
+                                        {{ paragraph }}
+                                </p>
+                        {% endfor %}
+
+                        {% if post.content|length > 1 %}
+                                <label for="toggle-{{forloop.counter}}" class="more">Show more</label>
+                                <label for="toggle-{{forloop.counter}}" class="less">Show less</label>
+                        {% endif %}
+                </div>
+                {% endfor %}
+        </div>
+
+        <form method="post" action="comment">
+        <textarea name="comment">default text</textarea>
+        <button type="submit">Add comment</button>
+        </form>
+
+        </body>
+</html>
+

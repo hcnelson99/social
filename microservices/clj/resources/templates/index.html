@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>The index</title>
+        <link rel="stylesheet" href="static/style.css">
+    </head>
+    <body>
+        <h1>Links</h1>
+        {% for link in links %}
+            <p><a href="/{{link}}">{{link}}</a></p>
+        {% endfor %}
+    </body>
+</html>

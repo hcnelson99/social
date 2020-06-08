@@ -1,0 +1,55 @@
+h1 {
+    text-align: center;
+}
+
+body {
+    max-width: 100ch;
+    margin: auto;
+}
+
+.post {
+    border: 1px solid black;
+    padding-left: 2ch;
+    padding-right: 2ch;
+    padding-top: 1ch;
+    padding-bottom: 1ch;
+    margin-bottom: 1ch;
+    font-size: 1.2em;
+}
+
+/* Hidden checkbox trick */
+input[type=checkbox] {
+   display: none;
+}
+
+/* The show more or show less toggle */
+label { 
+  display: block;
+  cursor: pointer;
+  text-align: center;
+}
+
+.hidden-paragraph {
+    display: none;
+}
+
+input[type=checkbox]:checked ~ .hidden-paragraph {
+    display: block;
+}
+
+/* This was what CSS was designed to do, right? */
+input[type=checkbox]:checked ~ .more {
+    display: none;
+}
+
+input[type=checkbox]:not(:checked) ~ .more {
+    display: block;
+}
+
+input[type=checkbox]:checked ~ .less {
+    display: block;
+}
+
+input[type=checkbox]:not(:checked) ~ .less {
+    display: none;
+}

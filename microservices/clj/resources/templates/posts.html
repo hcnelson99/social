@@ -17,10 +17,13 @@
             {% for post in comments %}
                 <div class="post"> 
                         <p> <b>{{ post.author }}</b> <i>({{ post.date }})</i> </p>
+
+                        <!-- Always show the first paragraphs -->
                         <p class=>
                         {{ post.content|first }}
                         </p>
 
+                        <!-- Checkbox must be above hidden paragraphs for css to work -->
                         <input type="checkbox" id="toggle-{{forloop.counter}}">
 
                         {% for paragraph in post.content|drop:1 %} 
@@ -37,9 +40,10 @@
                 {% endfor %}
         </div>
 
-        <form method="post" action="comment">
+        <form method="post" action="posts">
         <textarea name="comment">default text</textarea>
         <button type="submit">Add comment</button>
+        {% csrf-field %}
         </form>
 
         </body>

@@ -7,11 +7,14 @@
                  [ring/ring-defaults "0.3.2"]
                  [compojure "1.6.1"]
                  [selmer "1.12.27"]
-                 ]
+                 [com.layerware/hugsql "0.5.1"]
+                 [org.postgresql/postgresql "42.2.13"]
+                 [org.clojure/tools.logging "1.1.0"]]
   :main ^:skip-aot clj.core
   :target-path "target/%s"
   :plugins [[lein-ring "0.12.5"]]
   :ring {:handler clj.core/site
+         :init clj.core/server-init
          :nrepl {:start? true}}
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies 

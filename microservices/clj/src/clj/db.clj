@@ -1,4 +1,4 @@
-(ns clj.posts
+(ns clj.db
   (:require [hugsql.core :as hugsql]))
 
 (def db
@@ -7,4 +7,4 @@
    :subname "//localhost/social"
    })
 
-(hugsql/def-db-fns "sql/posts.sql")
+(hugsql/def-db-fns "sql/commands.sql")

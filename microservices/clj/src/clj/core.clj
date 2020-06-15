@@ -6,8 +6,17 @@
             [ring.util.anti-forgery :refer [anti-forgery-field]]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
             [clojure.string :as string]
-            [clj.posts :refer [db] :as posts]
+            [clj.db :refer [db] :as db]
+            [buddy.sign.jwt :as jwt]
+            [buddy.hashers :as hashers]
             ))
+(comment 
+  (use 'clojure.repl)
+  (db/register-user db {:username "Shoop" :password_hash "foo"})
+  (db/get-user db {:username "bar"})
+  )
+
+
 
 ; TODO: @security check that this can only serve things from within the
 ; resources directory (relative path names shouldn't allow one to request the
@@ -35,21 +44,62 @@
                     #(let [text (:text %)]
                        (assoc % :content (string/split text #"\n\n"))
                        )
-                    (posts/get-all-posts db))
+                    (db/get-all-posts db))
                   }))
 
 (defn submit-comment [req] 
   (let [comment-text (get-in req [:form-params "comment"])]
-    (posts/insert-post db {:author "Default author" :text comment-text})
-    (posts)))
+    (db/insert-post db {:author "Default author" :text comment-text})
+    (redirect "/posts" :see-other)))
+
+(defn login-page [req]
+  (let [error-message (get-in req [:flash :error-message])] 
+    (s/render-file "templates/login.html" {:error error-message})))
+
+(defn register-page [req]
+  (let [error-message (get-in req [:flash :error-message])] 
+    (s/render-file "templates/register.html" {:error error-message})))
+
+(defn login [req]
+  (let [params (:form-params req)
+        username (params "username")
+        password (params "password")
+        user (db/get-user db {:username username})]
+    (if (and user (hashers/check password (:password_hash user)))
+      (redirect "/" :see-other)
+      (assoc  (redirect "/login" :see-other) :flash {:error-message "Invalid username and/or password. Try again."}))
+    ))
+
+(comment
+  (try
+    (db/register-user db {:username "Shoop" :password_hash "test"})
+    (catch org.postgresql.util.PSQLException _
+      nil)
+    ) )
+
+(defn register-user [username password]
+  (try
+    (db/register-user db {:username username 
+                       :password_hash (hashers/derive password {:alg :scrypt})})
+    (catch org.postgresql.util.PSQLException _ nil)))
+
+(defn register [req]
+  (let [params (:form-params req)
+        username (params "username")
+        password (params "password")]
+    (if (register-user username password)
+        (redirect "/" :see-other)
+        (assoc (redirect "/register" :see-other) :flash {:error-message "Username already taken. Try again."}))))
 
 (defroutes handler
   (GET "/" [] (index))
   (GET "/posts" [] (posts))
   (POST "/posts" req (submit-comment req))
-  (GET "/login" [] "This is where you login")
+  (GET "/login" req (login-page req))
+  (POST "/login" req (login req))
   (GET "/logout" [] "This is where you logout")
-  (GET "/register" [] "This is where you register")
+  (GET "/register" req (register-page req))
+  (POST "/register" req (register req))
   (GET "/static/:file" [file] (serve-static file))
   (route/not-found "404 page not found"))
 
@@ -59,16 +109,3 @@
 
 (defn server-init []
   (s/add-tag! :csrf-field (fn [_ _] (anti-forgery-field))))
-
-(comment
-  (use 'clojure.repl)
-  (require '[ring.util.request :as request]
-           '[ring.util.response :as response]
-           '[ring.util.codec :as codec]
-           )
-  (response/resource-response "style.css" {:root "public"})
-  (doc response/resource-response)
-  (get-in site-defaults [:static :resources] false)
-  (site {:request-method :get :uri "/static/style.css"})
-  )
-

@@ -9,7 +9,10 @@
                  [selmer "1.12.27"]
                  [com.layerware/hugsql "0.5.1"]
                  [org.postgresql/postgresql "42.2.13"]
-                 [org.clojure/tools.logging "1.1.0"]]
+                 [com.fzakaria/slf4j-timbre "0.3.19"]
+                 [buddy/buddy-sign "3.1.0"]
+                 [buddy/buddy-hashers "1.4.0"]
+                 ]
   :main ^:skip-aot clj.core
   :target-path "target/%s"
   :plugins [[lein-ring "0.12.5"]]

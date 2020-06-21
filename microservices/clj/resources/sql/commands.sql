@@ -1,5 +1,8 @@
 -- :name get-all-posts :? :*
-select author, date, text from comments;
+select id, author, date, text from comments;
+
+-- :name get-post :? :1
+select id, author, date, text from comments where id = :id;
 
 -- :name insert-post :!
 insert into comments (author, text) values (:author, :text);

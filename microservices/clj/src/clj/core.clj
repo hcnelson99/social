@@ -8,15 +8,11 @@
             [clojure.string :as string]
             [clj.db :refer [db] :as db]
             [buddy.sign.jwt :as jwt]
-            [buddy.hashers :as hashers]
-            ))
-(comment 
+            [buddy.hashers :as hashers]))
+(comment
   (use 'clojure.repl)
   (db/register-user db {:username "Shoop" :password_hash "foo"})
-  (db/get-user db {:username "bar"})
-  )
-
-
+  (db/get-user db {:username "bar"}))
 
 ; TODO: @security check that this can only serve things from within the
 ; resources directory (relative path names shouldn't allow one to request the
@@ -25,41 +21,61 @@
 (defn serve-static [file]
   (resource-response file))
 
-(defn index [] 
+(defn index []
   (s/render-file "templates/index.html" {:links ["posts" "login" "logout" "register"]}))
 
-(def mock-post-data 
+(def mock-post-data
   {:username "Henry Nelson"
    :comments [{:author "Bob" :date (new java.util.Date)
                :content ["This is my post"]}
               {:author "Alice" :date (new java.util.Date)
-               :content ["This is my" "multi-paragraph" "post"]}]
-   })
+               :content ["This is my" "multi-paragraph" "post"]}]})
 
-(defn posts [] 
-  (s/render-file "templates/posts.html" 
+(comment
+  (map
+   (fn [post] (let [text (:text post)
+                    paragraphs (string/split text #"\r\n\r\n")]
+                (-> post
+                    (assoc :paragraphs paragraphs)
+                    :paragraphs)))
+   (db/get-all-posts db)))
+
+;; (s/render-file "templates/posts.html"
+;;                mock-post-data)
+
+(defn annotate-with-paragraphs [post]
+  (let [text (:text post)
+        paragraphs (string/split text #"\r\n\r\n")]
+    (assoc post :paragraphs paragraphs)))
+
+(defn posts []
+  (s/render-file "templates/posts.html"
                  {:username "Shoop"
                   :comments
-                  (map 
-                    #(let [text (:text %)]
-                       (assoc % :content (string/split text #"\n\n"))
-                       )
-                    (db/get-all-posts db))
-                  }))
+                  (map
+                   annotate-with-paragraphs
+                   (db/get-all-posts db))}))
 
-(defn submit-comment [req] 
+(defn post [id]
+  (if-let [post (db/get-post db {:id id})]
+    (s/render-file "templates/post.html"
+                   {:username "Shoop"
+                    :post (annotate-with-paragraphs post)})))
+
+(defn submit-comment [req]
   (let [comment-text (get-in req [:form-params "comment"])]
     (db/insert-post db {:author "Default author" :text comment-text})
     (redirect "/posts" :see-other)))
 
 (defn login-page [req]
-  (let [error-message (get-in req [:flash :error-message])] 
+  (let [error-message (get-in req [:flash :error-message])]
     (s/render-file "templates/login.html" {:error error-message})))
 
 (defn register-page [req]
-  (let [error-message (get-in req [:flash :error-message])] 
+  (let [error-message (get-in req [:flash :error-message])]
     (s/render-file "templates/register.html" {:error error-message})))
 
+; This should check if you're already logged in
 (defn login [req]
   (let [params (:form-params req)
         username (params "username")
@@ -67,20 +83,18 @@
         user (db/get-user db {:username username})]
     (if (and user (hashers/check password (:password_hash user)))
       (redirect "/" :see-other)
-      (assoc  (redirect "/login" :see-other) :flash {:error-message "Invalid username and/or password. Try again."}))
-    ))
+      (assoc  (redirect "/login" :see-other) :flash {:error-message "Invalid username and/or password. Try again."}))))
 
 (comment
   (try
     (db/register-user db {:username "Shoop" :password_hash "test"})
     (catch org.postgresql.util.PSQLException _
-      nil)
-    ) )
+      nil)))
 
 (defn register-user [username password]
   (try
-    (db/register-user db {:username username 
-                       :password_hash (hashers/derive password {:alg :scrypt})})
+    (db/register-user db {:username username
+                          :password_hash (hashers/derive password {:alg :scrypt})})
     (catch org.postgresql.util.PSQLException _ nil)))
 
 (defn register [req]
@@ -88,13 +102,18 @@
         username (params "username")
         password (params "password")]
     (if (register-user username password)
-        (redirect "/" :see-other)
-        (assoc (redirect "/register" :see-other) :flash {:error-message "Username already taken. Try again."}))))
+      (redirect "/" :see-other)
+      (assoc (redirect "/register" :see-other) :flash {:error-message "Username already taken. Try again."}))))
+
+(defn parse-int [s]
+  (try (Integer/parseInt s)
+       (catch java.lang.NumberFormatException _ nil)))
 
 (defroutes handler
   (GET "/" [] (index))
   (GET "/posts" [] (posts))
   (POST "/posts" req (submit-comment req))
+  (GET ["/posts/:id", :id #"[0-9]+"] [id] (post (Integer/parseInt id)))
   (GET "/login" req (login-page req))
   (POST "/login" req (login req))
   (GET "/logout" [] "This is where you logout")
@@ -104,8 +123,8 @@
   (route/not-found "404 page not found"))
 
 (def site
-  (wrap-defaults handler 
-    (assoc site-defaults :static false)))
+  (wrap-defaults handler
+                 (assoc site-defaults :static false)))
 
 (defn server-init []
   (s/add-tag! :csrf-field (fn [_ _] (anti-forgery-field))))

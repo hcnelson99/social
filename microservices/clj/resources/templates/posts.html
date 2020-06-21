@@ -18,24 +18,20 @@
                 <div class="post"> 
                         <p> <b>{{ post.author }}</b> <i>({{ post.date }})</i> </p>
 
-                        <!-- Always show the first paragraphs -->
-                        <p class=>
-                        {{ post.content|first }}
-                        </p>
-
-                        <!-- Checkbox must be above hidden paragraphs for css to work -->
-                        <input type="checkbox" id="toggle-{{forloop.counter}}">
-
-                        {% for paragraph in post.content|drop:1 %} 
-                                <p class="hidden-paragraph">
-                                        {{ paragraph }}
-                                </p>
-                        {% endfor %}
-
-                        {% if post.content|length > 1 %}
-                                <label for="toggle-{{forloop.counter}}" class="more">Show more</label>
-                                <label for="toggle-{{forloop.counter}}" class="less">Show less</label>
+                        <p>{{ post.paragraphs|first }}
+                        {% if post.paragraphs|length > 1 %}
+                                ...
                         {% endif %}
+
+                        </p>
+                        <a href="/posts/{{post.id}}">
+                                {% if post.paragraphs|length > 1 %}
+                                        Show more
+                                {% else %}
+                                        Reply
+                                {% endif %}
+                        </a>
+
                 </div>
                 {% endfor %}
         </div>

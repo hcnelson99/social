@@ -4,7 +4,6 @@
 (def db
   {:classname "org.postgresql.Driver"
    :subprotocol "postgresql"
-   :subname "//localhost/social"
-   })
+   :subname "//localhost/social"})
 
 (hugsql/def-db-fns "sql/commands.sql")

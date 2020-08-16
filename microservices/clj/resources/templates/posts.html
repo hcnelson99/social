@@ -1,46 +1,46 @@
 <!DOCTYPE html>
 <html>
         <head>
-        <title>Posts</title>
-        <link rel="stylesheet" href="static/style.css">
+                <title>Posts</title>
+                <link rel="stylesheet" href="/static/style.css">
         </head>
 
         <body>
 
-        {% if username %}
+                {% if username %}
                 <p>Hello <b>{{ username }} </b>! You are logged in! </p>
-        {% endif %}
+                {% endif %}
 
-        <h1>Posts</h1>
+                <h1>Posts</h1>
 
-        <div>
-            {% for post in comments %}
-                <div class="post"> 
-                        <p> <b>{{ post.author }}</b> <i>({{ post.date }})</i> </p>
+                <div>
+                        {% for post in comments %}
+                        <div class="post"> 
+                                <p> <b>{{ post.author }}</b> <i>({{ post.date }})</i> </p>
 
-                        <p>{{ post.paragraphs|first }}
-                        {% if post.paragraphs|length > 1 %}
-                                ...
-                        {% endif %}
-
-                        </p>
-                        <a href="/posts/{{post.id}}">
+                                <p>{{ post.paragraphs|first }}
                                 {% if post.paragraphs|length > 1 %}
-                                        Show more
-                                {% else %}
-                                        Reply
+                                ...
                                 {% endif %}
-                        </a>
 
+                                </p>
+                                <a href="/posts/{{post.id}}">
+                                        {% if post.paragraphs|length > 1 %}
+                                        Show more
+                                        {% else %}
+                                        Reply
+                                        {% endif %}
+                                </a>
+
+                        </div>
+                        {% endfor %}
                 </div>
-                {% endfor %}
-        </div>
 
-        <form method="post" action="posts">
-        <textarea name="comment">default text</textarea>
-        <button type="submit">Add comment</button>
-        {% csrf-field %}
-        </form>
+                <form method="post" action="posts">
+                        <textarea name="comment">default text</textarea>
+                        <button type="submit">Add comment</button>
+                        {% csrf-field %}
+                </form>
 
         </body>
 </html>
